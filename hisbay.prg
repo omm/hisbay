@@ -472,7 +472,7 @@ method compilePrg( cType, cName, oResponse ) class _HttpServer
          cCmdStr += " " + cAppFile
          cCmdStr += " -o" + cBinFile
          if hb_processRun( cCmdStr,, @cCmpOut, @cCmpErr ) != 0
-            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpOut, memoread( cAppFile ) ) )
+            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpErr, memoread( cAppFile ) ) )
          else
             cHrbFile := cBinFile
          endif
