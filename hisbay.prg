@@ -32,6 +32,10 @@
 #include "hbhrb.ch"
 #include "error.ch"
 
+#define TYPE_CONTROLLERS "controllers"
+#define TYPE_MODELS "models"
+#define TYPE_VIEWS "views"
+
 //TOFIX
 dynamic useTable
 
@@ -199,9 +203,9 @@ method start() class _HttpServer
 
    ::hModules := {=>}
 
-   ::hModules[ "controllers" ] := {=>}
-   ::hModules[ "models" ] := {=>}
-   ::hModules[ "views" ] := {=>}
+   ::hModules[ TYPE_CONTROLLERS ] := {=>}
+   ::hModules[ TYPE_MODELS ] := {=>}
+   ::hModules[ TYPE_VIEWS ] := {=>}
 
    hb_inetInit()
 
@@ -355,6 +359,7 @@ method addModule( cType, cName, oResponse ) class _HttpServer
 method delModule( cType, cName ) class _HttpServer
 
    if ::findModule( cType, cName )
+      hb_hrbunload( ::hModules[ cType ][ cName ][ 1 ] )
       ::hModules[ cType ][ cName ][ 1 ] := nil
       ::hModules[ cType ][ cName ][ 2 ] := nil
       hb_hDel( ::hModules[ cType ], cName )
@@ -414,8 +419,8 @@ method isModuleUpdated( cType, cName ) class _HttpServer
 */
 method checkModule( cType, cName ) class _HttpServer
 
-   local var cBinFile := ::cBinRoot + cType + hb_osPathSeparator() + lower( cName ) + ".hrb"
-   local var cAppFile := ::cAppRoot + cType + hb_osPathSeparator() + lower( cName ) + ".prg"
+   local var cBinFile := ::cBinRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".hrb"
+   local var cAppFile := ::cAppRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".prg"
 
    local var tBinFile
    local var tAppFile
@@ -920,8 +925,8 @@ static function processRequest( oServer, nSocket )
 
    if !empty( cController ) .and. !empty( cAction )
       if hb_mutexLock( oServer:mtxUpdate )
-         if !oServer:findModule( "controllers", cController ) .or. !oServer:isModuleUpdated( "controllers", cController )
-            oServer:addModule( "controllers", cController, oResponse )
+         if !oServer:findModule( TYPE_CONTROLLERS, cController ) .or. !oServer:isModuleUpdated( TYPE_CONTROLLERS, cController )
+            oServer:addModule( TYPE_CONTROLLERS, cController, oResponse )
          endif
          hb_mutexUnLock( oServer:mtxUpdate )
       endif
@@ -930,13 +935,13 @@ static function processRequest( oServer, nSocket )
          _Server := oServer
          _Request := oRequest
          _Response := oResponse
-         _Controller := oServer:getModuleInstance( "controllers", cController )
+         _Controller := oServer:getModuleInstance( TYPE_CONTROLLERS, cController )
          _Action := cAction
          &("_Controller:" + cAction + "()")
          _Controller := nil
       catch oError
          log "error processRequest:", oError:description, oError:operation
-         oServer:delModule( "controllers", cController )
+         oServer:delModule( TYPE_CONTROLLERS, cController )
       endtry
    elseif !empty( cPubFile )
       if !file( cPubFile )
@@ -1017,19 +1022,19 @@ static function processRoutes( oServer, oRequest, oResponse, cController, cActio
       cDocfile := strtran( cDocFile, "/", hb_osPathSeparator() )
    elseif cTarget == "{controller}:{action}"
       if !empty( cPath ) .and. !empty( cName )
-         cController := substr( cPath, 1, len( cPath ) - 1 )
-         cAction := cName
+         cController := lower( substr( cPath, 1, len( cPath ) - 1 ) )
+         cAction := lower( cName )
          cDocFile := ""
       elseif empty( cPath ) .and. !empty( cName )
-         cController := cName
+         cController := lower( cName )
          cAction := "index"
          cDocFile := ""
       elseif empty( cName) .and. !empty( cPath )
-         cController := substr( cPath, 1, len( cPath ) - 1 )
+         cController := lower( substr( cPath, 1, len( cPath ) - 1 ) )
          cAction := "index"
          cDocFile := ""
       else
-         cController := cName
+         cController := lower( cName )
          cAction := "index"
       endif
    elseif !empty( cTarget )
