@@ -1,4 +1,3 @@
-/*
  The MIT License (MIT)
  Copyright (c) 2013 Lorenzo Fiorini lorenzo.fiorini@gmail.com
 
@@ -16,36 +15,4 @@
  AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
 
-/**
- * @(#)hisbay.ch
- *
- * @author      Lorenzo Fiorini
- */
-
-#include "hisbdefs.ch"
-
-#ifndef HISBAY
-
-   memvar _Server
-
-   memvar _Request
-   memvar _Response
-
-   memvar _Controller
-   memvar _Action
-
-   #define _SESSION  _Request:hSession
-   #define _POSTS    _Request:hPosts
-   #define _GETS     _Request:hGets
-   #define _HEADERS  _Request:hHeaders
-   #define _VARS     _Request:hVars
-
-   #pragma texthidden( 1 )
-
-   #pragma escapedstrings = on
-
-   #define HISBAY
-
-#endif

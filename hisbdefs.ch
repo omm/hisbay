@@ -1,6 +1,6 @@
 /*
  The MIT License (MIT)
- Copyright (c) 2012 Lorenzo Fiorini lorenzo.fiorini@gmail.com
+ Copyright (c) 2013 Lorenzo Fiorini lorenzo.fiorini@gmail.com
 
  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -24,7 +24,7 @@
  * @author      Lorenzo Fiorini
  */
 
-#ifndef HISLANG
+#ifndef HISBDEFS
 
    #xtranslate true => .t.
    #xtranslate false => .f.
@@ -38,6 +38,7 @@
 
    #xtranslate public class => class
    #xtranslate public function => function
+   #xtranslate private function => static function
    #xtranslate this => Self
 
    #xtranslate <s>:sqlNumParam( <p>, <n> ) => <s> := strtran( <s>, "?" + hb_ntos( <p> ), iif( <n> == nil, "", hb_ntos( <n> ) ) )
@@ -65,13 +66,10 @@
    #xcommand finally => always
    #xcommand endtry => end
 
-   #xtranslate tip_urlEncode( <x> ) => __tip_urlEncode( <x> )
-   #xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
+   #define _CRLF chr( 13 ) + chr( 10 )
+   #define _LF chr( 10 )
 
-   #define _CRLF Chr( 13 ) + Chr( 10 )
-   #define _LF Chr( 10 )
-
-   #define HISLANG
+   #define HISBDEFS
 
 #endif
 

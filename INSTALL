@@ -1,0 +1,36 @@
+hisbay
+======
+
+          Hisbay MVC Web Framework for Harbour language
+
+   Requirements
+
+   A working installation of the Harbour Development Kit for your platform
+   ( see http://harbour-project.sourceforge.net )
+
+   The hisbay-demoapp directory ( see https://github.com/lfiorini/hisbay-demoapp )
+
+   Setup
+
+   - set HARBOUR_HOME envvar to the HDK installation path
+   - add to PATH the HARBOUR_HOME/bin dir
+   - edit build scripts or makefile according to your requirements
+   - contribs hbtip and hblog ( or xhb ) are required
+   - build hisbay executable
+   - set HISBAY_HOME envvar where the the Hisbay excutable is
+
+   Run
+
+   In the hisbay-demoapp/conf dir edit the hisbay.ini and set the port you want
+   to use ( the default is 9000 ).
+   If necessary edit the run.bat or run.sh script to add dynamic libraries paths.
+   
+   
+
+
+
+   
+   
+   
+
+

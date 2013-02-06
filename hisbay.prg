@@ -1,6 +1,6 @@
 /*
  The MIT License (MIT)
- Copyright (c) 2012 Lorenzo Fiorini lorenzo.fiorini@gmail.com
+ Copyright (c) 2013 Lorenzo Fiorini lorenzo.fiorini@gmail.com
 
  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -38,6 +38,10 @@
 
 //TOFIX
 dynamic useTable
+
+//TOFIX use this for hdk version 2.1
+#xtranslate tip_urlEncode( <x> ) => __tip_urlEncode( <x> )
+#xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
 
 memvar _Server
 
@@ -1301,3 +1305,5 @@ static function appendRight( cString, cAdd )
 
 #include "mvc.prg"
 #include "htmldoc.prg"
+//TOFIX use only if you know how to use it
+//#include "hdbcpg.prg"
