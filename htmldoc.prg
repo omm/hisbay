@@ -102,16 +102,6 @@ static function getHtmlTag( xVal, cKey, cDefault )
 
    return cVal
 
-static function getHtmlAllTag( hTags, cSep )
-
-   local cVal := ""
-
-   defaultNil( cSep, " " )
-
-   hb_HEval( hTags, { |k| cVal += getHtmlTag( hTags, k ) + cSep } )
-
-   return cVal
-
 static function getHtmlOption( xVal, cKey, cPre, cPost, lScan )
 
    local cVal := ""
@@ -145,39 +135,6 @@ static function getHtmlAllOptions( hOptions, cSep )
       defaultNil( cSep, " " )
 
       hb_HEval( hOptions, { |k| cVal += getHtmlOption( hOptions, k,,, .T. ) + cSep } )
-
-   endif
-
-   return cVal
-
-static function getHtmlValue( xVal, cKey, cDefault )
-
-   local var cVal := ""
-
-   defaultNil( cDefault, "" )
-
-   if !empty( xVal ) .and. !empty( cKey )
-      if hb_HHasKey( xVal, cKey )
-         cVal := hb_HGet( xVal, cKey )
-         hb_HDel( xVal, cKey )
-      endif
-   endif
-
-   if cVal == ""
-      cVal := cDefault
-   endif
-
-   return cVal
-
-static function getHtmlAllValues( hValues, cSep )
-
-   local var cVal := ""
-
-   if !empty( hValues )
-
-      defaultNil( cSep, " " )
-
-      hb_HEval( hValues, { |k| cVal += getHtmlValue( hValues, k ) + cSep } )
 
    endif
 
