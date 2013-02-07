@@ -15,7 +15,7 @@ hisbay
    - set HARBOUR_HOME envvar to the HDK installation path
    - add to PATH the HARBOUR_HOME/bin dir
    - edit build scripts or makefile according to your requirements
-   - contribs hbtip and hblog ( or xhb ) are required
+   - contribs hbtip and xhb are required
    - build hisbay executable
    - set HISBAY_HOME envvar where the the Hisbay excutable is
 
