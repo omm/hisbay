@@ -133,7 +133,7 @@ class _HttpServer
    var mtxUpdate
 
    var nServerSock
-   var lRunning init TRUE
+   var lRunning init true
 
    var hSessions
    var hGlobals
@@ -439,7 +439,7 @@ method checkModule( cType, cName ) class _HttpServer
       hb_fgetdatetime( cAppFile, @tAppFile )
       hReturn[ "lUpdated" ] := tBinFile >= tAppFile
    else
-	  hReturn[ "lUpdated" ] := FALSE
+	  hReturn[ "lUpdated" ] := false
    endif
 
    return hReturn
@@ -1076,17 +1076,17 @@ public function logerror( e, oResponse, cCommand )
 
    if ( e:genCode == EG_OPEN .and. e:osCode == 32 .and. e:canDefault )
 
-      neterr( TRUE )
+      neterr( true )
 
-      return FALSE
+      return false
 
    endif
 
    if ( e:genCode == EG_APPENDLOCK .and. e:canDefault )
 
-      neterr( TRUE  )
+      neterr( true  )
 
-      return FALSE
+      return false
 
    endif
 
@@ -1098,7 +1098,7 @@ public function logerror( e, oResponse, cCommand )
 
       endif
 
-      return TRUE
+      return true
 
    endif
 
@@ -1108,7 +1108,7 @@ public function logerror( e, oResponse, cCommand )
 
    endif
 
-   if TRUE
+   if true // needed to avoid unreacheable code message at break
 
       oResponse:Flush( 500, "Error", "text/html", getGenHtmlErrMsg( cErrStr + chr( 10 ) + ErrorMessage( e ) ) )
 
@@ -1116,7 +1116,7 @@ public function logerror( e, oResponse, cCommand )
 
    endif
 
-   return FALSE
+   return false
 
 /**
  *
