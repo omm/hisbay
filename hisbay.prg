@@ -40,8 +40,8 @@
 dynamic useTable
 
 //TOFIX use this for hdk version 2.1
-#xtranslate tip_urlEncode( <x> ) => __tip_urlEncode( <x> )
-#xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
+//#xtranslate tip_urlEncode( <x> ) => __tip_urlEncode( <x> )
+//#xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
 
 memvar _Server
 
