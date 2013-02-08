@@ -43,16 +43,7 @@ method init() class Controller
 
 method loadModel( cModel ) class Controller
 
-   cModel := lower( cModel )
-
-   if hb_mutexLock( _Server:mtxUpdate )
-      if !_Server:findModule( TYPE_MODELS, cModel ) .or. !_Server:isModuleUpdated( TYPE_MODELS, cModel )
-            _Server:addModule( TYPE_MODELS, cModel, _Response )
-         endif
-      hb_mutexUnLock( _Server:mtxUpdate )
-   endif
-
-   return _Server:getModuleInstance( TYPE_MODELS, cModel )
+   return _Server:getModule( TYPE_MODELS, lower( cModel ) )
 
 method view() class Controller
 

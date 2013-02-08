@@ -40,7 +40,7 @@
 dynamic useTable
 
 //TOFIX use this for hdk version 2.1
-//#xtranslate tip_urlEncode( <x> ) => __tip_urlEncode( <x> )
+//#xtranslate tip_urlEncode( <x> ) => __tip_url_Encode( <x> )
 //#xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
 
 memvar _Server
@@ -130,7 +130,8 @@ public function main( cIniFile )
 class _HttpServer
 
    var nPort
-   var mtxUpdate
+   var mtxModule
+   var mtxSession
 
    var nServerSock
    var lRunning init true
@@ -163,12 +164,9 @@ class _HttpServer
    method loadLibs
    method loadRoutes
 
-   method addModule
-   method delModule
-   method findmodule
-   method getModuleInstance
+   method getModule
    method checkModule
-   method isModuleUpdated
+   method delModule
 
    method compilePrg
 
@@ -188,7 +186,8 @@ method init( nPort ) class _HttpServer
 
    ::nPort := nPort
 
-   ::mtxUpdate := hb_MutexCreate()
+   ::mtxModule := hb_MutexCreate()
+   ::mtxSession := hb_MutexCreate()
 
    return this
 
@@ -330,88 +329,27 @@ method stop() class _HttpServer
  * @return nil
  *
  */
-method addModule( cType, cName, oResponse ) class _HttpServer
+method getModule( cType, cName, oResponse ) class _HttpServer
 
    local var oError
-   local var cHrbfile
+   local var hChkModule := ::checkmodule( cType, cName )
+   local var cHrbFile := hChkModule[ "cHrbFile" ]
 
-   if ::findModule( cType, cName )
+   if !hChkModule[ "lUpdated" ]
+      ::compilePrg( hChkModule, oResponse )
       ::delModule( cType, cName )
    endif
 
-   cHrbFile := ::compilePrg( cType, cName, oResponse )
-
-   if cHrbFile != nil
+   if !hb_hHaskey( ::hModules[ cType ], cName )
       try with { |e| logerror( e, oResponse, cHrbFile ) }
          ::hModules[ cType ][ cName ] := { hb_hrbload( HB_HRB_BIND_OVERLOAD, cHrbFile ), cName+"():new()" }
       catch oError
-         log "error addModule:", oError:description, oError:operation
+         log "error getModule:", oError:description, oError:operation
          ::delModule( cType, cName )
       endtry
    endif
 
-   return cHrbFile
-
-/**
- *
- * @param cType
- * @param cName
- *
- * @return nil
- *
- */
-method delModule( cType, cName ) class _HttpServer
-
-   if ::findModule( cType, cName )
-      hb_hrbunload( ::hModules[ cType ][ cName ][ 1 ] )
-      ::hModules[ cType ][ cName ][ 1 ] := nil
-      ::hModules[ cType ][ cName ][ 2 ] := nil
-      hb_hDel( ::hModules[ cType ], cName )
-   endif
-
-   return nil
-
-/**
- *
- * @param cType
- * @param cName
- *
- * @return boolean
- *
- */
-method findModule( cType, cName ) class _HttpServer
-
-   return hb_hHaskey( ::hModules[ cType ], cName )
-
-/**
- *
- * @param cType
- * @param cName
- *
- * @return oInstance
- *
- */
-method getModuleInstance( cType, cName ) class _HttpServer
-
-   local var oInstance
-
-   if hb_hHaskey( ::hModules[ cType ], cName )
-      oInstance := &(::hModules[ cType ][ cName ][ 2 ])
-   endif
-
-   return oInstance
-
-/**
- *
- * @param  cType
- * @param  cName
- *
- * @return hReturn
- *
-*/
-method isModuleUpdated( cType, cName ) class _HttpServer
-
-   return ::checkModule( cType, cName )[ "lUpdated" ]
+   return &(::hModules[ cType ][ cName ][ 2 ])
 
 /**
  *
@@ -423,26 +361,45 @@ method isModuleUpdated( cType, cName ) class _HttpServer
 */
 method checkModule( cType, cName ) class _HttpServer
 
-   local var cBinFile := ::cBinRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".hrb"
-   local var cAppFile := ::cAppRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".prg"
+   local var cHrbFile := ::cBinRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".hrb"
+   local var cPrgFile := ::cAppRoot + lower( cType ) + hb_osPathSeparator() + lower( cName ) + ".prg"
 
-   local var tBinFile
-   local var tAppFile
+   local var tHrbFile
+   local var tPrgFile
 
    local var hReturn := {=>}
 
-   hReturn[ "cBinFile" ] := cBinFile
-   hReturn[ "cAppFile" ] := cAppFile
+   hReturn[ "cHrbFile" ] := cHrbFile
+   hReturn[ "cPrgFile" ] := cPrgFile
 
-   if file( cBinFile ) .and. file( cAppFile )
-      hb_fgetdatetime( cBinFile, @tBinFile )
-      hb_fgetdatetime( cAppFile, @tAppFile )
-      hReturn[ "lUpdated" ] := tBinFile >= tAppFile
+   if file( cHrbFile ) .and. file( cPrgFile )
+      hb_fgetdatetime( cHrbFile, @tHrbFile )
+      hb_fgetdatetime( cPrgFile, @tPrgFile )
+      hReturn[ "lUpdated" ] := tHrbFile >= tPrgFile
    else
-	  hReturn[ "lUpdated" ] := false
+      hReturn[ "lUpdated" ] := false
    endif
 
    return hReturn
+
+/**
+ *
+ * @param cType
+ * @param cName
+ *
+ * @return nil
+ *
+ */
+method delModule( cType, cName ) class _HttpServer
+
+   if hb_hHaskey( ::hModules[ cType ], cName )
+      hb_hrbunload( ::hModules[ cType ][ cName ][ 1 ] )
+      ::hModules[ cType ][ cName ][ 1 ] := nil
+      ::hModules[ cType ][ cName ][ 2 ] := nil
+      hb_hDel( ::hModules[ cType ], cName )
+   endif
+
+   return nil
 
 /**
  *
@@ -453,41 +410,38 @@ method checkModule( cType, cName ) class _HttpServer
  * @return cHrbFile
  *
  */
-method compilePrg( cType, cName, oResponse ) class _HttpServer
+method compilePrg( hChkModule, oResponse ) class _HttpServer
 
    local var oError
-   local var cHrbFile
-   local var hChkFile := ::checkmodule( cType, cName )
-   local var cBinFile := hChkfile[ "cBinFile" ]
-   local var cAppFile := hChkFile[ "cAppFile" ]
-   local var lUpdated := hChkfile[ "lUpdated" ]
+   local var cHrbFile := hChkModule[ "cHrbFile" ]
+   local var cPrgFile := hChkModule[ "cPrgFile" ]
+   local var lUpdated := hChkModule[ "lUpdated" ]
    local var cCmdStr
    local var cCmpOut := ""
    local var cCmpErr := ""
+   local var lSuccess := FALSE
 
-   if !file( cAppFile )
-      oResponse:Flush( 404, "Not found", "text/html", getGenHtmlErrMsg( "404 File: " + cAppFile + chr( 10 ) + " not found" ) )
-   elseif !file( cBinFile ) .or. !lUpdated
+   if !file( cPrgFile )
+      oResponse:Flush( 404, "Not found", "text/html", getGenHtmlErrMsg( "404 File: " + cPrgFile + chr( 10 ) + " not found" ) )
+   elseif !file( cHrbFile ) .or. !lUpdated
       try with { |e| logerror( e, oResponse, cHrbFile ) }
          cCmdStr := "harbour -n -gh -w3 -es2 -q0 -ge1"
          cCmdStr += " -I" + ::cCmpRoot + "include"
          cCmdStr += " -I" + ::cHbyRoot
          cCmdStr += " -I" + ::cIncRoot
-         cCmdStr += " " + cAppFile
-         cCmdStr += " -o" + cBinFile
+         cCmdStr += " " + cPrgFile
+         cCmdStr += " -o" + cHrbFile
          if hb_processRun( cCmdStr,, @cCmpOut, @cCmpErr ) != 0
-            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpErr, memoread( cAppFile ) ) )
+            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpErr, memoread( cPrgFile ) ) )
          else
-            cHrbFile := cBinFile
+            lSuccess := true
          endif
       catch oError
          log "error compilePrg:", oError:description, oError:operation
       endtry
-   else
-      cHrbFile := cBinFile
    endif
 
-   return cHrbFile
+   return lSuccess
 
 /**
  *
@@ -892,10 +846,13 @@ method flush( nStatus, cReason, cMimeType, cData ) class _HttpResponse
 static function processRequest( oServer, nSocket )
 
    local var oError
-   local var oRequest, oResponse
+   local var oRequest
+   local var oResponse
    local var aHostVars
 
-   local var cController, cAction, cPubFile
+   local var cController
+   local var cAction
+   local var cPubFile
 
    if ( oRequest := _HttpRequest():new( nSocket, oServer ) ) == nil
       return -1 // oRequest is invalid, stop here
@@ -908,9 +865,9 @@ static function processRequest( oServer, nSocket )
       return -2 // oRequest is invalid, stop here
    endif
 
-   if hb_mutexLock( oServer:mtxUpdate )
+   if hb_mutexLock( oServer:mtxSession )
       oRequest:hSession := gethKeyOrDefault( oServer:hSessions, oRequest:cSID, {=>} )
-      hb_mutexUnLock( oServer:mtxUpdate )
+      hb_mutexUnLock( oServer:mtxSession )
    endif
 
    aHostVars := hb_aTokens( oRequest:hHeaders[ "Host" ], ":" )
@@ -928,18 +885,12 @@ static function processRequest( oServer, nSocket )
    processRoutes( oServer, oRequest, oResponse, @cController, @cAction, @cPubFile )
 
    if !empty( cController ) .and. !empty( cAction )
-      if hb_mutexLock( oServer:mtxUpdate )
-         if !oServer:findModule( TYPE_CONTROLLERS, cController ) .or. !oServer:isModuleUpdated( TYPE_CONTROLLERS, cController )
-            oServer:addModule( TYPE_CONTROLLERS, cController, oResponse )
-         endif
-         hb_mutexUnLock( oServer:mtxUpdate )
-      endif
       try with { |e| logerror( e, oResponse, "Controller: " + cController + " Action: " + cAction ) }
          public var _Server, _Request, _Response, _Controller, _Action
          _Server := oServer
          _Request := oRequest
          _Response := oResponse
-         _Controller := oServer:getModuleInstance( TYPE_CONTROLLERS, cController )
+         _Controller := oServer:getModule( TYPE_CONTROLLERS, cController, oResponse )
          _Action := cAction
          &("_Controller:" + cAction + "()")
          _Controller := nil
@@ -955,9 +906,9 @@ static function processRequest( oServer, nSocket )
       endif
    endif
 
-   if hb_mutexLock( oServer:mtxUpdate )
+   if hb_mutexLock( oServer:mtxSession )
       oServer:hSessions[ oRequest:cSID ] := oRequest:hSession
-      hb_mutexUnLock( oServer:mtxUpdate )
+      hb_mutexUnLock( oServer:mtxSession )
    endif
 
    hb_inetClose( nSocket )
@@ -1042,8 +993,8 @@ static function processRoutes( oServer, oRequest, oResponse, cController, cActio
          cAction := "index"
       endif
    elseif !empty( cTarget )
-      cController := left( cTarget, at( ":", cTarget ) - 1 )
-      cAction := substr( cTarget, at( ":", cTarget ) + 1 )
+      cController := lower( left( cTarget, at( ":", cTarget ) - 1 ) )
+      cAction := lower( substr( cTarget, at( ":", cTarget ) + 1 ) )
       cDocFile := ""
    endif
 
