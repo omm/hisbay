@@ -43,7 +43,7 @@ method init() class Controller
 
 method loadModel( cModel ) class Controller
 
-   return _Server:getModule( TYPE_MODELS, lower( cModel ) )
+   return _Server:getModule( TYPE_MODELS, lower( cModel ), _Response )
 
 method view() class Controller
 
