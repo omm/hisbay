@@ -69,10 +69,6 @@
    #define _CRLF chr( 13 ) + chr( 10 )
    #define _LF chr( 10 )
 
-   //TOFIX use this for hdk version 2.1
-   //#xtranslate tip_urlEncode( <x> ) => __tip_url_Encode( <x> )
-   //#xtranslate tip_urlDecode( <x> [, <y> ] ) => __tip_url_Decode( <x> [, <y> ] )
-
    #define HISBDEFS
 
 #endif
