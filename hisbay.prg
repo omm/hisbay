@@ -247,6 +247,9 @@ method loadLibs() class _HttpServer
    if !empty( aLibs )
       for each cLib in aLibs
          aadd( ::aExtLibs, hb_libload( cLib ) )
+         if atail( ::aExtLibs ) == nil
+            log "loadlibs: ", hb_liberror()
+         endif
       endfor
    endif
 
