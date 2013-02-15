@@ -274,7 +274,7 @@ method freeLibs() class _HttpServer
  */
 method loadRoutes() class _HttpServer
 
-   local var cRoutes := memoread( ::cCfgRoot + "routes" )
+   local var cRoutes := hb_memoread( ::cCfgRoot + "routes" )
    local var cEol := iif( chr(13)+chr(10) $ cRoutes, chr(13)+chr(10), chr(10) )
    local var aLines := {}
    local var aTmp := {}
@@ -428,7 +428,7 @@ method compilePrg( hChkModule, oResponse ) class _HttpServer
          cCmdStr += " " + cPrgFile
          cCmdStr += " -o" + cHrbFile
          if hb_processRun( cCmdStr,, @cCmpOut, @cCmpErr ) != 0
-            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpErr, memoread( cPrgFile ) ) )
+            oResponse:Flush( 500, "Compiler Error", "text/html", getCmpHtmlErrMsg( cCmpErr, hb_memoread( cPrgFile ) ) )
          else
             lSuccess := true
          endif
@@ -898,7 +898,7 @@ static function processRequest( oServer, nSocket )
       if !file( cPubFile )
          oResponse:Flush( 404, "Not found", "text/html", getGenHtmlErrMsg( "404 File: " + cPubFile + chr( 10 ) + " not found" ) )
       else
-         oResponse:Flush( 200, "OK", tip_filemimetype( cPubFile ), memoread( cPubFile ) )
+         oResponse:Flush( 200, "OK", tip_filemimetype( cPubFile ), hb_memoread( cPubFile ) )
       endif
    endif
 

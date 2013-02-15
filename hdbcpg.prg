@@ -69,7 +69,7 @@ method init( cHost, cDatabase, cUser, cPass, nPort ) class HdbcPgConnection
 
 method close() class HdbcPgConnection
 
-   PQClose( ::pDb )
+   PQFinish( ::pDb )
 
    return nil
 
@@ -237,9 +237,7 @@ method executeQuery() class HdbcPgPreparedStatement
          ::lPrepared := true
       endif
       PQClear( pRes )
-   endif
-
-   if ::lPrepared
+   else
       ::pRes := PQexecPrepared( ::pDB, ::cName, ::aParams )
       if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK .and. PQresultstatus( ::pRes ) != PGRES_TUPLES_OK
          raiseError( PQresultErrormessage( ::pRes ) )
@@ -264,9 +262,7 @@ method executeUpdate() class HdbcPgPreparedStatement
          ::lPrepared := true
       endif
       PQClear( ::pRes )
-   endif
-
-   if ::lPrepared
+   else
       ::pRes := PQexecPrepared( ::pDB, ::cName, ::aParams )
       if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK
          raiseError( PQresultErrormessage( ::pRes ) )
@@ -296,15 +292,9 @@ method Close() class HdbcPgPreparedStatement
 
       PQclear( ::pRes )
 
-      ::pRes := nil
-
    endif
 
-   ::pRes := PQexec( ::pDB, "DEALLOCATE " + ::cName )
-
-   PQclear( ::pRes )
-
-   ::pRes := nil
+   PQexec( ::pDB, "DEALLOCATE " + ::cName )
 
    return nil
 

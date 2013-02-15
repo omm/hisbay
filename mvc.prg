@@ -54,7 +54,7 @@ method view() class Controller
    if !file( cBinFile )
       _Response:Flush( 404, "Not found", "text/html", "404 File: " + cBinFile + " not found" )
    else
-      _Response:Flush( 200, "OK", "text/html", memoread( cBinFile ) )
+      _Response:Flush( 200, "OK", "text/html", hb_memoread( cBinFile ) )
    endif
 
    return this
