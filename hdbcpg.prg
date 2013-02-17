@@ -52,6 +52,7 @@ class HdbcPgConnection
    method prepareStatement
 
    method getMetadata
+   method copyWorkArea
 
 endclass
 
@@ -59,10 +60,10 @@ method init( cHost, cDatabase, cUser, cPass, nPort ) class HdbcPgConnection
 
    defaultNil( nPort, 5432 )
 
-   ::pDB := PQconnectDB( "dbname = " + cDatabase + " host = " + cHost + " user = " + cUser + " password = " + cPass + " port = " + hb_ntos( nPort ) )
+   ::pDb := PQconnectDB( "dbname = " + cDatabase + " host = " + cHost + " user = " + cUser + " password = " + cPass + " port = " + hb_ntos( nPort ) )
 
    if PQstatus( ::pDb ) != CONNECTION_OK
-      raiseError( PQerrormessage( ::pDb ) )
+      raiseError( ::pDb, nil )
    endif
 
    return this
@@ -75,10 +76,10 @@ method close() class HdbcPgConnection
 
 method startTransaction() class HdbcPgConnection
 
-   local var pRes    := PQexec( ::pDB, "BEGIN" )
+   local var pRes    := PQexec( ::pDb, "BEGIN" )
 
    if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-      raiseError( PQresultErrormessage( pRes ) )
+      raiseError( nil, pRes )
    endif
 
    PQclear( pRes )
@@ -91,10 +92,10 @@ method getTransactionStatus()
 
 method commit() class HdbcPgConnection
 
-   local var pRes    := PQexec( ::pDB, "COMMIT" )
+   local var pRes    := PQexec( ::pDb, "COMMIT" )
 
    if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-      raiseError( PQresultErrormessage( pRes ) )
+      raiseError( nil, pRes )
    endif
 
    PQclear( pRes )
@@ -103,10 +104,10 @@ method commit() class HdbcPgConnection
 
 method rollback() class HdbcPgConnection
 
-   local var pRes := PQexec( ::pDB, "ROLLBACK" )
+   local var pRes := PQexec( ::pDb, "ROLLBACK" )
 
    if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-      raiseError( PQresultErrormessage( pRes ) )
+      raiseError( nil, pRes )
    endif
 
    PQclear( pRes )
@@ -115,21 +116,25 @@ method rollback() class HdbcPgConnection
 
 method createStatement() class HdbcPgConnection
 
-   return HdbcPgStatement():new( ::pDB )
+   return HdbcPgStatement():new( ::pDb )
 
 method prepareStatement( cSql ) class HdbcPgConnection
 
-   return HdbcPgPreparedStatement():new( ::pDB, cSql )
+   return HdbcPgPreparedStatement():new( ::pDb, cSql )
 
 method getMetadata() class HdbcPgConnection
 
-   return HdbcPgDatabaseMetaData():new( ::pDB )
+   return HdbcPgDatabaseMetaData():new( ::pDb )
+
+method copyWorkArea( cTable, bWhile, bFor, aFieldNames, nCount, lTrim, nPreBuffer, lRecno ) class HdbcPgConnection
+
+   return hb_PQcopyFromWA( ::pDb, cTable, bWhile, bFor, aFieldNames, nCount, lTrim, nPreBuffer, lRecno )
 
 create class HdbcPgStatement
 
    protected:
 
-   var pDB
+   var pDb
    var cSql
    var oRs
 
@@ -144,21 +149,21 @@ create class HdbcPgStatement
 
 endclass
 
-method init( pDB, cSql ) class HdbcPgStatement
+method init( pDb, cSql ) class HdbcPgStatement
 
-   ::pDB      := pDB
+   ::pDb      := pDb
    ::cSql     := cSql
 
    return this
 
 method executeQuery( cSql ) class HdbcPgStatement
 
-   ::pRes := PQexec( ::pDB, cSql )
+   ::pRes := PQexec( ::pDb, cSql )
 
    if PQresultstatus( ::pRes ) != PGRES_TUPLES_OK
-      raiseError( PQresultErrormessage( ::pRes ) )
+      raiseError( nil, ::pRes )
    else
-      ::oRs := HdbcPgResultSet():new( ::pDB, this )
+      ::oRs := HdbcPgResultSet():new( ::pDb, this )
    endif
 
    return ::oRs
@@ -167,10 +172,10 @@ method executeUpdate( cSql ) class HdbcPgStatement
 
    local var nRows
 
-   ::pRes := PQexec( ::pDB, cSql )
+   ::pRes := PQexec( ::pDb, cSql )
 
    if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK
-      raiseError( PQresultErrormessage( ::pRes ) )
+      raiseError( nil, ::pRes )
    else
       nRows  := val( PQcmdTuples( ::pRes ) )
    endif
@@ -193,7 +198,7 @@ create class HdbcPgPreparedStatement
 
    protected:
 
-   var pDB
+   var pDb
    var cSql
    var pRes
    var oRs
@@ -217,9 +222,9 @@ create class HdbcPgPreparedStatement
 
 endclass
 
-method init( pDB, cSql ) class HdbcPgPreparedStatement
+method init( pDb, cSql ) class HdbcPgPreparedStatement
 
-   ::pDB      := pDB
+   ::pDb      := pDb
    ::cSql     := cSql
 
    return this
@@ -230,19 +235,19 @@ method executeQuery() class HdbcPgPreparedStatement
 
    if !::lPrepared
       ::aParams := asize( ::aParams, ::nParams )
-      pRes := PQprepare( ::pDB, ::cName, ::cSql, ::nParams )
+      pRes := PQprepare( ::pDb, ::cName, ::cSql, ::nParams )
       if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( pRes ) )
+         raiseError( nil, pRes )
       else
          ::lPrepared := true
       endif
       PQClear( pRes )
    else
-      ::pRes := PQexecPrepared( ::pDB, ::cName, ::aParams )
+      ::pRes := PQexecPrepared( ::pDb, ::cName, ::aParams )
       if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK .and. PQresultstatus( ::pRes ) != PGRES_TUPLES_OK
-         raiseError( PQresultErrormessage( ::pRes ) )
+         raiseError( nil, ::pRes )
       else
-         ::oRs := HdbcPgResultSet():new( ::pDB, this )
+         ::oRs := HdbcPgResultSet():new( ::pDb, this )
          ::aParams := array( ::nParams )
       endif
    endif
@@ -255,17 +260,17 @@ method executeUpdate() class HdbcPgPreparedStatement
 
    if !::lPrepared
       ::aParams := asize( ::aParams, ::nParams )
-      ::pRes := PQprepare( ::pDB, ::cName, ::cSql, ::nParams )
+      ::pRes := PQprepare( ::pDb, ::cName, ::cSql, ::nParams )
       if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( ::pRes ) )
+         raiseError( nil, ::pRes )
       else
          ::lPrepared := true
       endif
       PQClear( ::pRes )
    else
-      ::pRes := PQexecPrepared( ::pDB, ::cName, ::aParams )
+      ::pRes := PQexecPrepared( ::pDb, ::cName, ::aParams )
       if PQresultstatus( ::pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( ::pRes ) )
+         raiseError( nil, ::pRes )
       else
          nRows  := val( PQcmdTuples( ::pRes ) )
          ::aParams := array( ::nParams )
@@ -294,7 +299,7 @@ method Close() class HdbcPgPreparedStatement
 
    endif
 
-   PQexec( ::pDB, "DEALLOCATE " + ::cName )
+   PQexec( ::pDb, "DEALLOCATE " + ::cName )
 
    return nil
 
@@ -302,7 +307,7 @@ create class HdbcPgResultSet
 
    protected:
 
-   var pDB
+   var pDb
    var pStmt
    var pRes
 
@@ -366,9 +371,9 @@ create class HdbcPgResultSet
 
 endclass
 
-method init( pDB, pStmt ) class HdbcPgResultSet
+method init( pDb, pStmt ) class HdbcPgResultSet
 
-   ::pDB      := pDB
+   ::pDb      := pDb
    ::pStmt    := pStmt
    ::pRes     := pStmt:pRes
 
@@ -512,17 +517,17 @@ method insertRow() class HdbcPgResultSet
          endif
       next
 
-      pRes := PQexec( ::pDB, "INSERT INTO " + ::cTableName + " (" + substr( cSqlFields, 2 ) + ") VALUES (" + substr( cSqlValues, 2 ) + ")" )
+      pRes := PQexec( ::pDb, "INSERT INTO " + ::cTableName + " (" + substr( cSqlFields, 2 ) + ") VALUES (" + substr( cSqlValues, 2 ) + ")" )
 
       if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( pRes ) )
+         raiseError( nil, pRes )
       endif
 
       PQclear( pRes )
 
    else
 
-      raiseError( "Table name is not set" )
+      raiseError( nil, nil, "Table name is not set" )
 
    endif
 
@@ -555,10 +560,10 @@ method updateRow() class HdbcPgResultSet
          cSqlWhere += "AND " + aKeys[ nField ][ 1 ] + "=" + iif( aKeys[ nField ][ 2 ] == "N", ::getString( aKeys[ nField ][ 1 ] ), "'" + ::getString( aKeys[ nField ][ 1 ] ) + "'" )
       next
 
-      pRes := PQexec( ::pDB, "UPDATE " + ::cTableName + " SET " + substr( cSql, 2 ) + " WHERE " + substr( cSqlWhere, 5 ) )
+      pRes := PQexec( ::pDb, "UPDATE " + ::cTableName + " SET " + substr( cSql, 2 ) + " WHERE " + substr( cSqlWhere, 5 ) )
 
       if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( pRes ) )
+         raiseError( nil, pRes )
       endif
 
       PQclear( pRes )
@@ -583,10 +588,10 @@ method deleteRow() class HdbcPgResultSet
          cSqlWhere += "AND " + aKeys[ nField ][ 1 ] + "=" + iif( aKeys[ nField ][ 2 ] == "N", ::getString( aKeys[ nField ][ 1 ] ), "'" + ::getString( aKeys[ nField ][ 1 ] ) + "'" )
       next
 
-      pRes := PQexec( ::pDB, "DELETE FROM " + ::cTableName + " WHERE " + substr( cSqlWhere, 5 ) )
+      pRes := PQexec( ::pDb, "DELETE FROM " + ::cTableName + " WHERE " + substr( cSqlWhere, 5 ) )
 
       if PQresultstatus( pRes ) != PGRES_COMMAND_OK
-         raiseError( PQresultErrormessage( pRes ) )
+         raiseError( nil, pRes )
       endif
 
       PQclear( pRes )
@@ -632,7 +637,7 @@ create class HdbcPgDatabaseMetaData
 
    protected:
 
-   var pDB
+   var pDb
 
    exported:
 
@@ -642,9 +647,9 @@ create class HdbcPgDatabaseMetaData
 
 endclass
 
-method init( pDB ) class HdbcPgDatabaseMetaData
+method init( pDb ) class HdbcPgDatabaseMetaData
 
-   ::pDB := pDB
+   ::pDb := pDb
 
    return this
 
@@ -665,10 +670,10 @@ method getTables( cCatalog, cSchema, cTableName, cTableType ) class HdbcPgDataba
    cSql += " and table_name ilike '" + cTableName + "'"
    cSql += " and table_type in ('" + cTableType + "')"
 
-   pRes := PQexec( ::pDB, cSql )
+   pRes := PQexec( ::pDb, cSql )
 
    if PQresultstatus( pRes ) != PGRES_TUPLES_OK
-      raiseError( PQresultErrormessage( pRes ) )
+      raiseError( nil, pRes )
    else
       nTables := PQlastrec( pRes )
       for n := 1 to nTables
@@ -701,7 +706,7 @@ method getPrimaryKeys( cCatalog, cSchema, cTableName ) class HdbcPgDatabaseMetaD
    cQuery += "   AND e.oid = a.relnamespace "
    cQuery += "   AND e.nspname = '" + cSchema + "'"
 
-   pRes := PQexec( ::pDB, cQuery )
+   pRes := PQexec( ::pDb, cQuery )
 
    nKeys := PQlastrec( pRes )
 
@@ -719,9 +724,35 @@ method getPrimaryKeys( cCatalog, cSchema, cTableName ) class HdbcPgDatabaseMetaD
 
    return aKeys
 
-static procedure raiseError( cErrMsg )
+static procedure raiseError( pDb, pRes, cErrText )
 
    local var oErr
+   local var cErrMsg
+   local var nStatus
+
+   if !( pDb == nil )
+      cErrMsg := PQerrorMessage( pDb )
+      if empty( cErrMsg )
+         nStatus := PQstatus( pDb )
+         cErrMsg := "Returned connection status: " + hb_ntos( nStatus )
+      endif
+   elseif !( pRes == nil )
+      cErrMsg := PQresultErrorMessage( pRes )
+      if empty( cErrMsg )
+         nStatus := PQresultStatus( pRes )
+         if nStatus == PGRES_TUPLES_OK
+            cErrMsg := "Used executeUpdate instead of executeQuery"
+         elseif nStatus == PGRES_COMMAND_OK
+            cErrMsg := "Used executeQuery instead of executeUpdate"
+         else
+            cErrMsg := "Returned result status: " + hb_ntos( nStatus )
+         endif
+      endif
+   elseif !( cErrText == nil )
+      cErrMsg := cErrText
+   else
+      cErrMsg := "undefined"
+   endif
 
    oErr := ErrorNew()
    oErr:severity    := ES_ERROR
