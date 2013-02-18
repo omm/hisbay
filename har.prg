@@ -74,7 +74,7 @@ function harUnLoad()
  */
 function harRead( cFile )
 
-   local hFile := gethKeyOrEmpty( hSHarBag, cFile )
+   local hFile := hb_hgetdef( hSHarBag, cFile, "" )
    local cBuffer
 
    if !empty( hFile )

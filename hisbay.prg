@@ -70,24 +70,24 @@ public function main( cIniFile )
 
    init log on console() name "hisbay"
 
-   nPort := val( gethKeyOrEmpty( hIniVal, "port" ) )
+   nPort := val( hb_hgetdef( hIniVal, "port", "0" ) )
 
    oServer := _HttpServer():new( nPort )
 
    oServer:hGlobals := hIniVal
 
-   oServer:cAppRoot := gethKeyOrDefault( hIniVal, "approot", "." + cDirSep + "app" )
-   oServer:cBinRoot := gethKeyOrDefault( hIniVal, "binroot", "." + cDirSep + "bin" )
-   oServer:cPubRoot := gethKeyOrDefault( hIniVal, "pubroot", "." + cDirSep + "public" )
-   oServer:cCfgRoot := gethKeyOrDefault( hIniVal, "cfgroot", "." + cDirSep + "conf" )
-   oServer:cLogRoot := gethKeyOrDefault( hIniVal, "logroot", "." + cDirSep + "log" )
-   oServer:cIncRoot := gethKeyOrDefault( hIniVal, "incroot", "." + cDirSep + "include" )
-   oServer:cLibRoot := gethKeyOrDefault( hIniVal, "libroot", "." + cDirSep + "lib" )
+   oServer:cAppRoot := hb_hgetdef( hIniVal, "approot", "." + cDirSep + "app" )
+   oServer:cBinRoot := hb_hgetdef( hIniVal, "binroot", "." + cDirSep + "bin" )
+   oServer:cPubRoot := hb_hgetdef( hIniVal, "pubroot", "." + cDirSep + "public" )
+   oServer:cCfgRoot := hb_hgetdef( hIniVal, "cfgroot", "." + cDirSep + "conf" )
+   oServer:cLogRoot := hb_hgetdef( hIniVal, "logroot", "." + cDirSep + "log" )
+   oServer:cIncRoot := hb_hgetdef( hIniVal, "incroot", "." + cDirSep + "include" )
+   oServer:cLibRoot := hb_hgetdef( hIniVal, "libroot", "." + cDirSep + "lib" )
 
-   oServer:cCmpRoot := gethKeyOrDefault( hIniVal, "cmproot", getenv( "HARBOUR_HOME" ) )
-   oServer:cHbyRoot := gethKeyOrDefault( hIniVal, "hbyroot", getenv( "HISBAY_HOME" ) )
+   oServer:cCmpRoot := hb_hgetdef( hIniVal, "cmproot", getenv( "HARBOUR_HOME" ) )
+   oServer:cHbyRoot := hb_hgetdef( hIniVal, "hbyroot", getenv( "HISBAY_HOME" ) )
 
-   oServer:cExtLibs := gethKeyOrDefault( hIniVal, "extlibs", "" )
+   oServer:cExtLibs := hb_hgetdef( hIniVal, "extlibs", "" )
 
    appendRight( @oServer:cAppRoot, cDirSep )
    appendright( @oServer:cBinRoot, cDirSep )
@@ -663,7 +663,7 @@ method init( nRequestSock ) class _HttpRequest
          ::HTTP_RAW_POST_DATA := ""
          ::hPosts := {=>}
 
-         nLength := val( gethKeyOrEmpty( ::hHeaders, "Content-Length" ) )
+         nLength := val( hb_hgetdef( ::hHeaders, "Content-Length", "0" ) )
 
          if nLength > 0
             cTemp := Space( nLength )
@@ -675,7 +675,7 @@ method init( nRequestSock ) class _HttpRequest
                cTemp := left( cTemp, nLength )
             endif
             ::HTTP_RAW_POST_DATA := cTemp
-            if gethKeyOrEmpty( ::hHeaders, "Content-Type" ) = "application/x-www-form-urlencoded"
+            if hb_hgetdef( ::hHeaders, "Content-Type", "" ) = "application/x-www-form-urlencoded"
                ::hPosts := GetSepFields( cTemp, "&", "=" )
                ::hFields := hb_hMerge( ::hFields, ::hPosts )
             endif
@@ -859,13 +859,13 @@ static function processRequest( oServer, nSocket )
 
    oResponse := _HttpResponse():new( nSocket, oServer )
 
-   if empty( gethKeyOrEmpty( oRequest:hHeaders, "Host" ) )
+   if !hb_hhaskey( oRequest:hHeaders, "Host" )
       oResponse:Flush( 400, "Bad Request", "text/plain" )
       return -2 // oRequest is invalid, stop here
    endif
 
    if hb_mutexLock( oServer:mtxSession )
-      oRequest:hSession := gethKeyOrDefault( oServer:hSessions, oRequest:cSID, {=>} )
+      oRequest:hSession := hb_hgetdef( oServer:hSessions, oRequest:cSID, {=>} )
       hb_mutexUnLock( oServer:mtxSession )
    endif
 
@@ -879,7 +879,7 @@ static function processRequest( oServer, nSocket )
 
    oResponse:hCookies := oRequest:hCookies
    oResponse:cHost := oRequest:hHeaders[ "Host" ]
-   oResponse:lCompress := ( "deflate" $ gethKeyOrEmpty( oRequest:hHeaders, "Accept-Encoding" ) )
+   oResponse:lCompress := ( "deflate" $ hb_hgetdef( oRequest:hHeaders, "Accept-Encoding", "" ) )
 
    processRoutes( oServer, oRequest, oResponse, @cController, @cAction, @cPubFile )
 

@@ -47,9 +47,6 @@
 
    #include "hbclass.ch"
 
-   #xtranslate gethKeyOrDefault( <h>, <k>, <v> ) => iif( hb_hHasKey( <h>, <k> ), hb_hGet( <h>, <k> ), <v> )
-   #xtranslate gethKeyOrEmpty( <h>, <k> ) => iif( hb_hHasKey( <h>, <k> ), hb_hGet( <h>, <k> ), "" )
-
    #xcommand textcstream into <v> => #pragma __cstream|<v>+=%s
 
    #xcommand textcstreaminclude <f> <dummy: into,to> <v> => #pragma __cstreaminclude <f>|<v>+=%s
